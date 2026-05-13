@@ -1,0 +1,822 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>🦁 Animales Salvajes — Safari Challenge</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700;800&display=swap');
+  *{box-sizing:border-box;margin:0;padding:0;}
+  :root{
+    --savanna:#c8860a;--sky-top:#1a0a00;--sky-mid:#3d1a02;--sky-hor:#c85a00;
+    --grass:#5a8a00;--grass-bright:#7ab800;--sand:#d4943a;
+    --gold:#f5c842;--amber:#e87a10;--cream:#fdf3d8;
+    --sun:#ffdd44;--fire:#ff6622;
+    --accent1:#ff9922;--accent2:#44ddaa;--accent3:#ff5588;
+    --textw:rgba(255,255,255,0.92);
+  }
+  body{font-family:'Nunito',sans-serif;overflow-x:hidden;min-height:100vh;display:flex;flex-direction:column;align-items:center;background:var(--sky-top);}
+  #safari-canvas{position:fixed;inset:0;width:100%;height:100%;z-index:0;pointer-events:none;}
+  .screen{width:100%;min-height:100vh;display:none;flex-direction:column;align-items:center;justify-content:center;position:relative;z-index:1;}
+  .screen.active{display:flex;}
+
+  /* ===== WELCOME ===== */
+  .welcome-card{background:rgba(20,8,0,0.93);backdrop-filter:blur(18px);border:2.5px solid rgba(245,200,66,0.4);border-radius:28px;padding:clamp(20px,5vw,46px);text-align:center;max-width:620px;width:93%;box-shadow:0 0 80px rgba(230,120,10,0.18),0 24px 60px rgba(0,0,0,0.75);}
+  .welcome-title{font-family:'Fredoka One',cursive;font-size:clamp(1.7rem,5.5vw,3.4rem);line-height:1.05;margin-bottom:4px;}
+  .welcome-sub-title{font-family:'Fredoka One',cursive;font-size:clamp(0.8rem,2.2vw,1.15rem);color:var(--gold);margin-bottom:10px;letter-spacing:1px;}
+  .bounce-letter{display:inline-block;animation:bLetter 1.1s ease-in-out infinite alternate;}
+  @keyframes bLetter{from{transform:translateY(0) rotate(-2deg)}to{transform:translateY(-10px) rotate(2deg)}}
+  .welcome-mascot{font-size:clamp(3.2rem,10vw,5.5rem);display:block;margin:8px 0;animation:mascotBounce 2s ease-in-out infinite;}
+  @keyframes mascotBounce{0%,100%{transform:scale(1)}40%{transform:scale(0.88) scaleX(1.1)}50%{transform:scale(1.12) scaleX(0.92) translateY(-14px)}60%{transform:scale(0.9) scaleX(1.08)}}
+  .welcome-desc{color:rgba(255,220,160,0.88);font-size:clamp(0.8rem,2vw,1rem);margin-bottom:16px;line-height:1.7;}
+  .part-pills{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-bottom:18px;}
+  .ppill{border-radius:22px;padding:6px 16px;font-size:clamp(0.7rem,1.8vw,0.87rem);font-weight:800;letter-spacing:0.5px;}
+  .ppill-1{background:rgba(245,200,66,0.18);border:1.5px solid rgba(245,200,66,0.5);color:var(--gold);}
+  .ppill-2{background:rgba(68,221,170,0.15);border:1.5px solid rgba(68,221,170,0.45);color:var(--accent2);}
+  .name-wrap{display:flex;flex-direction:column;gap:11px;align-items:center;}
+  .name-label{color:var(--gold);font-size:clamp(0.9rem,2.2vw,1.1rem);font-weight:800;}
+  .name-input{width:100%;max-width:340px;padding:12px 22px;border-radius:50px;border:2.5px solid var(--amber);background:rgba(255,255,255,0.07);color:white;font-size:clamp(0.95rem,2.2vw,1.05rem);font-family:'Nunito',sans-serif;font-weight:700;text-align:center;outline:none;transition:all 0.3s;}
+  .name-input::placeholder{color:rgba(255,255,255,0.28);}
+  .name-input:focus{background:rgba(255,200,80,0.1);box-shadow:0 0 24px rgba(245,200,66,0.35);border-color:var(--gold);}
+  .start-btn{background:linear-gradient(135deg,#e87a10,#c8500a);color:white;border:none;border-radius:50px;padding:clamp(12px,2.5vw,17px) clamp(30px,6vw,58px);font-size:clamp(1rem,2.8vw,1.25rem);font-family:'Fredoka One',cursive;cursor:pointer;box-shadow:0 6px 26px rgba(232,122,16,0.5);transition:all 0.22s;letter-spacing:1.5px;}
+  .start-btn:hover{transform:scale(1.07) translateY(-3px);box-shadow:0 12px 32px rgba(255,140,30,0.6);}
+  .start-btn:active{transform:scale(0.95);}
+
+  /* ===== SCORE BAR ===== */
+  .score-bar{position:fixed;top:0;left:0;right:0;display:flex;align-items:center;justify-content:space-between;padding:6px 16px;background:rgba(10,4,0,0.9);backdrop-filter:blur(10px);z-index:50;font-family:'Fredoka One',cursive;font-size:clamp(0.78rem,2vw,1rem);color:white;border-bottom:2px solid rgba(245,200,66,0.2);}
+  .score-bar .lives{color:#ff7070;letter-spacing:2px;}
+  .score-bar .prog{color:var(--gold);}
+  .score-bar .pname{color:var(--accent2);}
+
+  /* ===== TOP PANEL ===== */
+  .top-panel{position:relative;z-index:5;width:97%;max-width:820px;margin:clamp(42px,6vh,54px) auto 0;display:flex;flex-direction:column;gap:5px;}
+  .part-badge{display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:2px;}
+  .pbadge{font-family:'Fredoka One',cursive;font-size:clamp(0.75rem,1.9vw,0.95rem);padding:3px 14px;border-radius:20px;letter-spacing:1px;}
+  .pbadge-1{background:rgba(245,200,66,0.2);border:1.5px solid rgba(245,200,66,0.5);color:var(--gold);}
+  .pbadge-2{background:rgba(68,221,170,0.14);border:1.5px solid rgba(68,221,170,0.4);color:var(--accent2);}
+
+  .question-box{background:rgba(245,200,66,0.1);border:2px solid rgba(245,200,66,0.4);border-radius:13px;padding:8px 16px;text-align:center;}
+  .box-label{font-size:clamp(0.55rem,1.3vw,0.68rem);font-weight:800;letter-spacing:2px;text-transform:uppercase;}
+  .q-label{color:var(--gold);}
+  .question-text{font-family:'Fredoka One',cursive;font-size:clamp(0.9rem,3vw,1.55rem);color:#ffe8a0;text-shadow:0 2px 8px rgba(0,0,0,0.7);line-height:1.25;margin-top:3px;}
+
+  .build-box{background:rgba(68,221,170,0.09);border:2px solid rgba(68,221,170,0.28);border-radius:13px;padding:7px 14px;}
+  .build-label{color:var(--accent2);}
+  .sentence-row{display:flex;flex-wrap:wrap;align-items:center;gap:5px;min-height:28px;margin-top:4px;}
+  .row-tag{font-size:clamp(0.55rem,1.3vw,0.7rem);color:rgba(255,255,255,0.38);font-weight:800;letter-spacing:1px;white-space:nowrap;margin-right:2px;}
+  .built-word{font-family:'Fredoka One',cursive;font-size:clamp(0.8rem,2.2vw,1.1rem);padding:3px 11px;border-radius:18px;color:white;animation:popIn 0.28s ease;text-shadow:0 1px 4px rgba(0,0,0,0.5);display:inline-block;}
+  @keyframes popIn{from{transform:scale(0) rotate(-8deg);opacity:0}to{transform:scale(1);opacity:1}}
+  .word-slot{display:inline-block;width:clamp(28px,5.5vw,48px);height:clamp(16px,2.6vh,22px);border-bottom:2px dashed rgba(255,255,255,0.22);border-radius:3px;margin:0 2px;vertical-align:middle;}
+  .placeholder-txt{color:rgba(255,255,255,0.24);font-style:italic;font-size:clamp(0.65rem,1.4vw,0.78rem);}
+
+  .instr-box{background:rgba(255,255,255,0.07);border:2px solid rgba(255,153,34,0.4);border-radius:13px;padding:7px 14px;text-align:center;}
+  .instr-label{font-size:clamp(0.55rem,1.3vw,0.68rem);font-weight:800;letter-spacing:2px;color:#ffcc66;text-transform:uppercase;}
+  .instr-text{font-family:'Fredoka One',cursive;font-size:clamp(0.84rem,2.5vw,1.3rem);color:white;text-shadow:0 2px 6px rgba(0,0,0,0.6);line-height:1.3;}
+
+  .stage-row{position:relative;z-index:5;display:flex;align-items:center;justify-content:center;gap:8px;margin:2px auto;width:97%;max-width:820px;}
+  .stage-pill{background:rgba(255,255,255,0.1);border:1.5px solid rgba(245,200,66,0.3);border-radius:28px;padding:3px 12px;color:var(--gold);font-size:clamp(0.6rem,1.6vw,0.78rem);font-weight:800;}
+  .hint-text{color:rgba(255,200,100,0.85);font-size:clamp(0.64rem,1.6vw,0.82rem);animation:hPulse 2.4s ease-in-out infinite;}
+  @keyframes hPulse{0%,100%{opacity:0.5}50%{opacity:1}}
+
+  /* ===== GAME WORLD ===== */
+  .game-world{position:relative;width:100%;flex:1;z-index:2;overflow:hidden;min-height:40vh;}
+  #game-screen{justify-content:flex-start;}
+
+  /* Stones / rocks as lily pads */
+  .lily-pad{position:absolute;cursor:pointer;z-index:10;user-select:none;transition:transform 0.1s;}
+  .lily-pad:hover svg{filter:brightness(1.3) drop-shadow(0 0 10px rgba(255,160,40,0.65));}
+  .lily-pad:active{transform:scale(0.88)!important;}
+  .pad-word{position:absolute;top:50%;left:50%;transform:translate(-50%,-52%);font-family:'Fredoka One',cursive;font-size:clamp(0.48rem,1.5vw,0.87rem);color:white;text-shadow:0 1px 5px rgba(0,0,0,0.95);text-align:center;width:88%;pointer-events:none;z-index:2;line-height:1.1;}
+  @keyframes stoneBob{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
+  @keyframes correctFlash{0%{filter:brightness(1)}50%{filter:brightness(2.2) saturate(2) hue-rotate(20deg)}100%{filter:brightness(1.4)}}
+  @keyframes wrongShake{0%,100%{transform:translateX(0)}25%{transform:translateX(-12px)}75%{transform:translateX(12px)}}
+  .lily-pad.correct svg{animation:correctFlash 0.5s ease;}
+  .lily-pad.wrong{animation:wrongShake 0.52s ease;}
+
+  /* Mascot animal */
+  #mascot{position:absolute;z-index:20;pointer-events:none;filter:drop-shadow(0 8px 18px rgba(0,0,0,0.65));}
+
+  /* Savanna floor */
+  #savanna-floor{position:absolute;bottom:0;left:0;right:0;height:clamp(65px,15vh,115px);z-index:8;pointer-events:none;}
+
+  /* Feedback */
+  .feedback-overlay{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:100;pointer-events:none;opacity:0;}
+  .feedback-overlay.show{animation:feedShow 0.45s ease forwards;pointer-events:all;}
+  @keyframes feedShow{0%{opacity:0;transform:scale(0.4)}65%{opacity:1;transform:scale(1.08)}100%{opacity:1;transform:scale(1)}}
+  .feedback-text{font-family:'Fredoka One',cursive;font-size:clamp(2.2rem,9vw,5rem);text-shadow:0 4px 22px rgba(0,0,0,0.7);text-align:center;}
+  .feedback-sub{color:white;font-size:clamp(0.88rem,2.6vw,1.35rem);margin-top:10px;text-shadow:0 2px 10px rgba(0,0,0,0.7);text-align:center;padding:0 20px;}
+
+  /* ===== PART TRANSITION ===== */
+  #part-transition{position:fixed;inset:0;background:rgba(10,4,0,0.97);display:none;flex-direction:column;align-items:center;justify-content:center;z-index:200;text-align:center;padding:30px;}
+  #part-transition.show{display:flex;}
+  .pt-title{font-family:'Fredoka One',cursive;font-size:clamp(2rem,7vw,4rem);color:var(--gold);text-shadow:0 0 30px rgba(255,180,30,0.5);margin-bottom:12px;}
+  .pt-sub{color:rgba(255,220,160,0.88);font-size:clamp(0.9rem,2.4vw,1.2rem);margin-bottom:22px;line-height:1.65;max-width:540px;}
+  .pt-btn{background:linear-gradient(135deg,#e87a10,#c8500a);color:white;border:none;border-radius:50px;padding:14px 50px;font-size:clamp(1rem,2.6vw,1.25rem);font-family:'Fredoka One',cursive;cursor:pointer;letter-spacing:1.5px;box-shadow:0 6px 26px rgba(232,122,16,0.55);transition:all 0.22s;}
+  .pt-btn:hover{transform:scale(1.06);}
+
+  /* ===== RESULTS ===== */
+  #results-screen{z-index:1;}
+  .results-card{background:rgba(10,4,0,0.95);backdrop-filter:blur(18px);border:2.5px solid rgba(245,200,66,0.3);border-radius:28px;padding:clamp(20px,5vw,48px);text-align:center;max-width:700px;width:93%;z-index:2;box-shadow:0 0 80px rgba(232,120,10,0.12),0 20px 60px rgba(0,0,0,0.65);}
+  .results-title{font-family:'Fredoka One',cursive;font-size:clamp(1.7rem,5.5vw,3rem);color:var(--gold);}
+  .results-icon{font-size:clamp(2.8rem,9vw,4.8rem);margin:10px 0;animation:celebrate 1s ease-in-out infinite alternate;}
+  @keyframes celebrate{from{transform:translateY(0) rotate(-10deg)}to{transform:translateY(-15px) rotate(10deg)}}
+  .results-grade{font-family:'Fredoka One',cursive;font-size:clamp(4rem,14vw,7.5rem);line-height:1;background:linear-gradient(135deg,#f5c842,#e87a10,#44ddaa);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+  .results-name{color:white;font-size:clamp(0.95rem,2.6vw,1.2rem);margin:8px 0;font-weight:700;}
+  .results-msg{color:rgba(255,220,160,0.92);font-size:clamp(0.84rem,2.1vw,1.02rem);margin:7px 0 14px;}
+  .results-detail{color:rgba(255,255,255,0.5);font-size:clamp(0.73rem,1.8vw,0.92rem);margin:4px 0;}
+  .transcript{background:rgba(0,0,0,0.42);border-radius:14px;padding:12px 14px;margin:14px 0;text-align:left;max-height:270px;overflow-y:auto;}
+  .transcript::-webkit-scrollbar{width:4px;}
+  .transcript::-webkit-scrollbar-thumb{background:rgba(245,200,66,0.28);border-radius:3px;}
+  .tr-section{color:var(--gold);font-family:'Fredoka One',cursive;font-size:clamp(0.82rem,1.9vw,1rem);margin:8px 0 4px;}
+  .tr-row{margin-bottom:7px;padding-bottom:6px;border-bottom:1px solid rgba(255,255,255,0.06);}
+  .tr-q{color:rgba(255,210,80,0.6);font-size:clamp(0.63rem,1.4vw,0.74rem);font-style:italic;}
+  .tr-a{color:rgba(100,255,200,0.9);font-size:clamp(0.67rem,1.55vw,0.84rem);margin-top:2px;}
+  .play-again-btn{background:linear-gradient(135deg,#e87a10,#c8500a);color:white;border:none;border-radius:50px;padding:clamp(11px,2.4vw,16px) clamp(26px,5vw,52px);font-size:clamp(0.93rem,2.6vw,1.18rem);font-family:'Fredoka One',cursive;cursor:pointer;margin-top:16px;transition:all 0.2s;box-shadow:0 6px 22px rgba(232,120,10,0.4);}
+  .play-again-btn:hover{transform:scale(1.05);}
+
+  /* Stars / particles */
+  .star{position:absolute;border-radius:50%;background:var(--gold);animation:twinkle 2.2s infinite alternate;}
+  @keyframes twinkle{from{opacity:0.06}to{opacity:0.88}}
+  .particle{position:fixed;z-index:200;pointer-events:none;animation:partFall linear forwards;}
+  @keyframes partFall{0%{transform:translateY(0) rotate(0deg);opacity:1}100%{transform:translateY(100vh) rotate(720deg);opacity:0}}
+  .splash{position:absolute;pointer-events:none;z-index:25;animation:splashAnim 0.9s ease forwards;}
+  @keyframes splashAnim{0%{transform:scale(0);opacity:1}100%{transform:scale(2.4);opacity:0}}
+</style>
+</head>
+<body>
+<canvas id="safari-canvas"></canvas>
+
+<!-- ===== WELCOME ===== -->
+<div id="welcome-screen" class="screen active">
+  <div class="welcome-card">
+    <div class="welcome-title" id="title-letters"></div>
+    <div class="welcome-sub-title">🌍 Safari Challenge — ¡Animales Salvajes!</div>
+    <span class="welcome-mascot">🦁</span>
+    <p class="welcome-desc">
+      ¡Salta por la sabana y practica inglés con<br>
+      <b style="color:var(--gold)">animales salvajes increíbles!</b><br>
+      Parte 1: ve el nombre en español y salta al animal en inglés.<br>
+      Parte 2: lee la oración en español y construye <b style="color:var(--accent2)">can / cannot</b> en inglés.
+    </p>
+    <div class="part-pills">
+      <span class="ppill ppill-1">🦒 Parte 1 — Español → English Name (10 animales)</span>
+      <span class="ppill ppill-2">🐘 Parte 2 — Can / Can't Sentences (10 oraciones)</span>
+    </div>
+    <div class="name-wrap">
+      <label class="name-label">¿Cuál es tu nombre, explorador?</label>
+      <input class="name-input" id="student-name" type="text" placeholder="Escribe tu nombre aquí…" maxlength="30" autocomplete="off">
+      <button class="start-btn" onclick="startGame()">🦁 ¡COMENZAR SAFARI!</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== GAME ===== -->
+<div id="game-screen" class="screen">
+  <div class="score-bar">
+    <span class="lives" id="lives-display">❤️❤️❤️</span>
+    <span class="prog"  id="prog-display">Parte 1 · 1/10</span>
+    <span class="pname" id="pname-display"></span>
+  </div>
+
+  <div class="top-panel">
+    <div class="part-badge">
+      <span class="pbadge pbadge-1" id="part-badge-el">🦒 PARTE 1 — DATOS DEL ANIMAL</span>
+    </div>
+    <div class="question-box">
+      <div class="box-label q-label">🇲🇽 En Español</div>
+      <div class="question-text" id="spanish-text">…</div>
+    </div>
+    <div class="build-box">
+      <div class="box-label build-label">✅ Tu respuesta</div>
+      <div class="sentence-row" id="build-row">
+        <span class="row-tag">→</span>
+        <span id="build-words"><span class="placeholder-txt">Salta a la respuesta correcta…</span></span>
+      </div>
+    </div>
+    <div class="instr-box">
+      <div class="instr-label">⭐ ¡Salta a la piedra correcta!</div>
+      <div class="instr-text" id="instr-text">…</div>
+    </div>
+  </div>
+
+  <div class="stage-row">
+    <span class="stage-pill" id="stage-pill">1 / 10</span>
+    <span class="hint-text" id="hint-text">🦁 ¡Salta a la respuesta!</span>
+  </div>
+
+  <div class="game-world" id="game-world">
+    <div id="lily-pads-container"></div>
+    <div id="mascot">
+      <!-- Lion SVG -->
+      <svg viewBox="0 0 90 100" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:100%;overflow:visible">
+        <!-- Shadow -->
+        <ellipse cx="45" cy="97" rx="20" ry="5" fill="rgba(0,0,0,0.22)"/>
+        <!-- Mane -->
+        <circle cx="45" cy="44" r="30" fill="#c87820"/>
+        <circle cx="20" cy="35" r="14" fill="#a05810"/>
+        <circle cx="70" cy="35" r="14" fill="#a05810"/>
+        <circle cx="14" cy="52" r="12" fill="#b06818"/>
+        <circle cx="76" cy="52" r="12" fill="#b06818"/>
+        <circle cx="28" cy="22" r="12" fill="#a85e14"/>
+        <circle cx="62" cy="22" r="12" fill="#a85e14"/>
+        <circle cx="45" cy="17" r="13" fill="#c07020"/>
+        <!-- Body -->
+        <ellipse cx="45" cy="78" rx="20" ry="16" fill="#e8b040"/>
+        <!-- Back legs -->
+        <ellipse cx="28" cy="88" rx="8" ry="5" fill="#d4a030" transform="rotate(-15,28,88)"/>
+        <ellipse cx="62" cy="88" rx="8" ry="5" fill="#d4a030" transform="rotate(15,62,88)"/>
+        <!-- Front paws -->
+        <ellipse cx="32" cy="90" rx="7" ry="4" fill="#c89020"/>
+        <ellipse cx="58" cy="90" rx="7" ry="4" fill="#c89020"/>
+        <!-- Head -->
+        <circle cx="45" cy="44" r="22" fill="#e8b040"/>
+        <!-- Ears -->
+        <circle cx="26" cy="26" r="7" fill="#e8b040"/>
+        <circle cx="64" cy="26" r="7" fill="#e8b040"/>
+        <circle cx="26" cy="26" r="4" fill="#c87820"/>
+        <circle cx="64" cy="26" r="4" fill="#c87820"/>
+        <!-- Eyes -->
+        <ellipse cx="37" cy="42" rx="6" ry="5.5" fill="#ffd040"/>
+        <ellipse cx="53" cy="42" rx="6" ry="5.5" fill="#ffd040"/>
+        <circle cx="37" cy="42" r="3.5" fill="#2a1400"/>
+        <circle cx="53" cy="42" r="3.5" fill="#2a1400"/>
+        <circle cx="38" cy="41" r="1.4" fill="white"/>
+        <circle cx="54" cy="41" r="1.4" fill="white"/>
+        <!-- Nose -->
+        <ellipse cx="45" cy="51" rx="5" ry="3.5" fill="#c87820"/>
+        <ellipse cx="45" cy="50" rx="3.5" ry="2.5" fill="#8a4010"/>
+        <!-- Mouth -->
+        <path d="M40 55 Q45 60 50 55" stroke="#8a4010" stroke-width="2" fill="none" stroke-linecap="round"/>
+        <path d="M45 55 L45 59" stroke="#8a4010" stroke-width="1.5" fill="none"/>
+        <!-- Whiskers -->
+        <line x1="22" y1="51" x2="38" y2="53" stroke="rgba(255,220,120,0.6)" stroke-width="1"/>
+        <line x1="22" y1="55" x2="38" y2="55" stroke="rgba(255,220,120,0.6)" stroke-width="1"/>
+        <line x1="52" y1="53" x2="68" y2="51" stroke="rgba(255,220,120,0.6)" stroke-width="1"/>
+        <line x1="52" y1="55" x2="68" y2="55" stroke="rgba(255,220,120,0.6)" stroke-width="1"/>
+        <!-- Tail -->
+        <path d="M64 78 Q80 70 76 82 Q84 78 80 88" stroke="#c89020" stroke-width="4" fill="none" stroke-linecap="round"/>
+        <ellipse cx="80" cy="90" rx="5" ry="6" fill="#a05810"/>
+      </svg>
+    </div>
+    <div id="savanna-floor">
+      <svg viewBox="0 0 900 115" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:100%">
+        <rect x="0" y="55" width="900" height="60" fill="#5a3000"/>
+        <path d="M0,55 Q90,38 180,56 Q270,72 360,50 Q450,34 540,56 Q630,74 720,50 Q810,34 900,56 L900,115 L0,115Z" fill="#6e3c08"/>
+        <!-- Grass -->
+        <path d="M0,58 Q8,40 16,58" stroke="#7ab800" stroke-width="3.5" fill="none"/>
+        <path d="M12,62 Q22,44 32,62" stroke="#5a8a00" stroke-width="3" fill="none"/>
+        <path d="M80,56 Q90,38 100,56" stroke="#7ab800" stroke-width="3.5" fill="none"/>
+        <path d="M160,60 Q170,42 182,60" stroke="#5a8a00" stroke-width="3" fill="none"/>
+        <path d="M250,54 Q260,36 272,54" stroke="#7ab800" stroke-width="3.5" fill="none"/>
+        <path d="M340,58 Q350,40 362,58" stroke="#5a8a00" stroke-width="3" fill="none"/>
+        <path d="M430,56 Q442,38 454,56" stroke="#7ab800" stroke-width="3.5" fill="none"/>
+        <path d="M520,60 Q532,42 544,60" stroke="#5a8a00" stroke-width="3" fill="none"/>
+        <path d="M610,54 Q622,36 634,54" stroke="#7ab800" stroke-width="3.5" fill="none"/>
+        <path d="M700,58 Q712,40 724,58" stroke="#5a8a00" stroke-width="3" fill="none"/>
+        <path d="M800,62 Q812,44 824,62" stroke="#7ab800" stroke-width="3" fill="none"/>
+        <path d="M860,56 Q872,38 884,56" stroke="#5a8a00" stroke-width="2.5" fill="none"/>
+        <!-- Trees / acacia silhouettes -->
+        <rect x="40" y="10" width="8" height="50" fill="#3a1c00"/>
+        <ellipse cx="44" cy="14" rx="26" ry="10" fill="#1a3a00"/>
+        <rect x="820" y="15" width="7" height="45" fill="#3a1c00"/>
+        <ellipse cx="823" cy="18" rx="22" ry="9" fill="#1a3a00"/>
+        <!-- Animals in distance -->
+        <text x="140" y="60" font-size="20">🦒</text>
+        <text x="720" y="60" font-size="16">🐘</text>
+        <!-- Sun glow on horizon -->
+        <ellipse cx="450" cy="20" rx="140" ry="18" fill="rgba(255,140,20,0.14)"/>
+      </svg>
+    </div>
+  </div>
+
+  <div class="feedback-overlay" id="feedback-overlay">
+    <div class="feedback-text" id="feedback-text"></div>
+    <div class="feedback-sub"  id="feedback-sub"></div>
+  </div>
+</div>
+
+<!-- ===== PART TRANSITION ===== -->
+<div id="part-transition">
+  <div style="font-size:clamp(3rem,10vw,5.5rem);margin-bottom:14px">🦁🌍🐘</div>
+  <div class="pt-title">🦒 ¡Parte 1 Completada! 🦒</div>
+  <div class="pt-sub">
+    ¡Muy bien! ¡Ya sabes los nombres en inglés!<br>
+    Ahora en la Parte 2 practican<br>
+    <b style="color:var(--gold)">can / cannot</b> con animales salvajes.<br><br>
+    Lee la oración en español → ¡construye la oración en inglés saltando palabra por palabra!
+  </div>
+  <button class="pt-btn" onclick="startPart2()">🐆 ¡COMENZAR PARTE 2!</button>
+</div>
+
+<!-- ===== RESULTS ===== -->
+<div id="results-screen" class="screen">
+  <div id="result-stars"></div>
+  <div class="results-card">
+    <div class="results-title">🏆 ¡SAFARI COMPLETADO! 🏆</div>
+    <div class="results-icon">🦁</div>
+    <div class="results-name" id="result-name"></div>
+    <div class="results-grade" id="result-grade">10</div>
+    <div class="results-msg"  id="result-msg"></div>
+    <div class="results-detail" id="result-detail1"></div>
+    <div class="results-detail" id="result-detail2"></div>
+    <div class="transcript" id="transcript"></div>
+    <button class="play-again-btn" onclick="resetGame()">🔄 ¡Jugar de Nuevo!</button>
+  </div>
+</div>
+
+<script>
+/* ====================================================
+   PARTE 1 — Spanish animal name → jump to English name
+   10 animals, 4 options each
+==================================================== */
+const part1Data = [
+  { spanish:"🦁 el León",       correct:"Lion",      options:["Lion","Tiger","Wolf","Bear"] },
+  { spanish:"🐘 el Elefante",   correct:"Elephant",  options:["Elephant","Hippo","Rhino","Giraffe"] },
+  { spanish:"🦒 la Jirafa",     correct:"Giraffe",   options:["Giraffe","Camel","Horse","Deer"] },
+  { spanish:"🐊 el Cocodrilo",  correct:"Crocodile", options:["Crocodile","Lizard","Turtle","Snake"] },
+  { spanish:"🦓 la Cebra",      correct:"Zebra",     options:["Zebra","Horse","Donkey","Deer"] },
+  { spanish:"🐆 el Guepardo",   correct:"Cheetah",   options:["Cheetah","Leopard","Jaguar","Cougar"] },
+  { spanish:"🦍 el Gorila",     correct:"Gorilla",   options:["Gorilla","Monkey","Chimp","Baboon"] },
+  { spanish:"🦅 el Águila",     correct:"Eagle",     options:["Eagle","Hawk","Vulture","Owl"] },
+  { spanish:"🐍 la Serpiente",  correct:"Snake",     options:["Snake","Worm","Lizard","Gecko"] },
+  { spanish:"🦛 el Rinoceronte",correct:"Rhinoceros",options:["Rhinoceros","Hippo","Elephant","Buffalo"] }
+];
+
+/* ====================================================
+   PARTE 2 — can / can't sentence building
+==================================================== */
+const part2Data = [
+  { spanish:"🦈 El tiburón puede nadar.",         words:["The","shark","can","swim"] },
+  { spanish:"🦁 El león puede correr.",            words:["The","lion","can","run"] },
+  { spanish:"🦅 El águila puede volar.",           words:["The","eagle","can","fly"] },
+  { spanish:"🐆 El guepardo puede saltar.",        words:["The","cheetah","can","jump"] },
+  { spanish:"🐘 El elefante puede caminar.",       words:["The","elephant","can","walk"] },
+  { spanish:"🐧 El pingüino no puede volar.",      words:["The","penguin","cannot","fly"] },
+  { spanish:"🦒 La jirafa puede correr.",          words:["The","giraffe","can","run"] },
+  { spanish:"🐊 El cocodrilo puede nadar.",        words:["The","crocodile","can","swim"] },
+  { spanish:"🦓 La cebra no puede trepar.",        words:["The","zebra","cannot","climb"] },
+  { spanish:"🐒 El mono puede trepar.",            words:["The","monkey","can","climb"] }
+];
+
+/* Distractors for Part 2 word pads */
+const distractorsPart2 = ["A","An","can","cannot","swim","run","fly","jump","walk","climb",
+  "lion","shark","eagle","cheetah","elephant","penguin","giraffe","crocodile","zebra","monkey",
+  "The","is","has","jumps","runs","swims","flies","walks","climbs"];
+
+/* Pad/stone colour schemes */
+const padColorsPt1 = [
+  ["#5a2a00","#c86c20"],["#3a4a00","#8aaa10"],["#003a3a","#108888"],
+  ["#4a1a00","#b05010"],["#001a3a","#1060a0"],["#3a001a","#a02060"],
+  ["#1a1a00","#808010"],["#001a1a","#107070"],["#3a0a00","#a83820"],
+  ["#2a0a3a","#8030c0"]
+];
+const padColorsPt2 = [
+  ["#003a1a","#10a850"],["#0a003a","#3020c0"],["#3a2a00","#a88800"],
+  ["#003a2a","#18b060"],["#3a0a2a","#c03080"],["#1a3a00","#609000"],
+  ["#00283a","#108070"],["#3a1a00","#c07020"],["#1a003a","#6810c0"],
+  ["#003a0a","#109040"]
+];
+const lc=["#f5c842","#ff9922","#44ddaa","#ff5588","#60d8ff","#ff8855","#aaff44","#ff44cc","#44aaff","#ffdd44"];
+
+/* ====================================================
+   STATE
+==================================================== */
+let studentName="",gamePart=1,p1Index=0,p2Index=0,
+    answeredWords=[],targetAnswer=[],
+    lives=3,mistakes=0,isAnimating=false,gameActive=false,
+    mascotPos={x:0,y:0};
+
+/* ====================================================
+   AUDIO
+==================================================== */
+let AC=null;
+function getAC(){if(!AC)AC=new(window.AudioContext||window.webkitAudioContext)();return AC;}
+function tone(f,t,d,vol=0.2,type="sine"){try{const ac=getAC(),o=ac.createOscillator(),g=ac.createGain();o.connect(g);g.connect(ac.destination);o.type=type;o.frequency.setValueAtTime(f,ac.currentTime);if(t)o.frequency.exponentialRampToValueAtTime(t,ac.currentTime+d*0.8);g.gain.setValueAtTime(vol,ac.currentTime);g.gain.exponentialRampToValueAtTime(0.001,ac.currentTime+d);o.start();o.stop(ac.currentTime+d);}catch(e){}}
+function playCorrect(){try{const ac=getAC(),now=ac.currentTime;[[440,0],[550,0.1],[660,0.21],[880,0.34]].forEach(([f,t])=>{const o=ac.createOscillator(),g=ac.createGain();o.connect(g);g.connect(ac.destination);o.type="sine";o.frequency.value=f;g.gain.setValueAtTime(0.16,now+t);g.gain.exponentialRampToValueAtTime(0.001,now+t+0.28);o.start(now+t);o.stop(now+t+0.32);});}catch(e){}}
+function playWrong(){tone(160,90,0.5,0.28,"sawtooth");}
+function playJump(){tone(440,600,0.14,0.14);}
+function playFall(){tone(300,80,0.8,0.3,"sawtooth");}
+
+/* ====================================================
+   SAVANNA CANVAS
+==================================================== */
+const canvas=document.getElementById("safari-canvas"),ctx=canvas.getContext("2d");
+let cw,ch,particles=[],wt=0;
+const dustMotes=[];
+
+function resizeCanvas(){cw=canvas.width=window.innerWidth;ch=canvas.height=window.innerHeight;}
+function initSavanna(){
+  dustMotes.length=0;
+  for(let i=0;i<18;i++){
+    dustMotes.push({x:Math.random()*cw,y:ch*0.3+Math.random()*ch*0.5,vx:(Math.random()-0.5)*0.5,vy:-0.1-Math.random()*0.2,r:1+Math.random()*3,alpha:Math.random()*0.3});
+  }
+}
+function drawSavanna(){
+  // Sky gradient — sunset
+  const sky=ctx.createLinearGradient(0,0,0,ch);
+  sky.addColorStop(0,"#0a0500");sky.addColorStop(0.35,"#2a0e00");sky.addColorStop(0.65,"#6e2a00");sky.addColorStop(0.82,"#c85a00");sky.addColorStop(1,"#6e3c08");
+  ctx.fillStyle=sky;ctx.fillRect(0,0,cw,ch);
+
+  // Horizon glow
+  const hg=ctx.createRadialGradient(cw*0.5,ch*0.72,0,cw*0.5,ch*0.72,cw*0.55);
+  hg.addColorStop(0,"rgba(255,160,40,0.22)");hg.addColorStop(1,"rgba(0,0,0,0)");
+  ctx.fillStyle=hg;ctx.fillRect(0,0,cw,ch);
+
+  // Stars (only upper portion)
+  ctx.save();
+  for(let i=0;i<34;i++){
+    const sx=((i*1234567)%cw),sy=((i*987654)%(ch*0.45));
+    const br=0.3+0.7*Math.pow(Math.sin(wt*0.8+i),2);
+    ctx.globalAlpha=br*0.7;ctx.fillStyle="#fff8cc";
+    ctx.beginPath();ctx.arc(sx,sy,0.8+br*1.5,0,Math.PI*2);ctx.fill();
+  }
+  ctx.restore();
+
+  // Moon
+  ctx.save();
+  ctx.globalAlpha=0.55;
+  ctx.fillStyle="#ffe8a0";ctx.beginPath();ctx.arc(cw*0.82,ch*0.1,20,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle="#c87000";ctx.beginPath();ctx.arc(cw*0.82+4,ch*0.1-3,16,0,Math.PI*2);ctx.fill();
+  ctx.restore();
+
+  // Dust motes
+  wt+=0.012;
+  dustMotes.forEach(d=>{
+    d.x+=d.vx;d.y+=d.vy;
+    if(d.x<0)d.x=cw;if(d.x>cw)d.x=0;
+    if(d.y<ch*0.2){d.y=ch*0.85;d.x=Math.random()*cw;}
+    ctx.save();ctx.globalAlpha=d.alpha*0.7;
+    ctx.fillStyle="#ffcc88";ctx.beginPath();ctx.arc(d.x,d.y,d.r,0,Math.PI*2);ctx.fill();
+    ctx.restore();
+  });
+}
+function savannaLoop(){ctx.clearRect(0,0,cw,ch);drawSavanna();requestAnimationFrame(savannaLoop);}
+
+/* ====================================================
+   WELCOME
+==================================================== */
+function initWelcome(){
+  const title="SAFARI CHALLENGE",el=document.getElementById("title-letters");
+  el.innerHTML="";
+  title.split("").forEach((c,i)=>{
+    if(c===" "){el.innerHTML+="<span style='width:0.3em;display:inline-block'></span>";return;}
+    const s=document.createElement("span");s.className="bounce-letter";s.textContent=c;
+    s.style.color=lc[i%lc.length];s.style.animationDelay=(i*0.07)+"s";el.appendChild(s);
+  });
+}
+
+/* ====================================================
+   START
+==================================================== */
+function startGame(){
+  const inp=document.getElementById("student-name"),name=inp.value.trim();
+  if(!name){inp.style.borderColor="#ff4757";inp.focus();return;}
+  studentName=name;
+  document.getElementById("pname-display").textContent="🦁 "+studentName;
+  gamePart=1;p1Index=0;p2Index=0;answeredWords=[];targetAnswer=[];
+  lives=3;mistakes=0;isAnimating=false;gameActive=true;
+  document.getElementById("welcome-screen").classList.remove("active");
+  document.getElementById("game-screen").classList.add("active");
+  loadCurrent();
+}
+
+/* ====================================================
+   LOAD CURRENT
+==================================================== */
+function loadCurrent(){
+  if(gamePart===1) loadPart1();
+  else loadPart2();
+}
+
+function loadPart1(){
+  if(p1Index>=part1Data.length){
+    gameActive=false;
+    document.getElementById("part-transition").classList.add("show");
+    return;
+  }
+  const item=part1Data[p1Index];
+  document.getElementById("part-badge-el").textContent="🦒 PARTE 1 — ESPAÑOL → ENGLISH";
+  document.getElementById("part-badge-el").className="pbadge pbadge-1";
+  document.getElementById("spanish-text").innerHTML=`<span style="font-size:1.4em">${item.spanish}</span>`;
+  document.getElementById("prog-display").textContent=`Parte 1 · ${p1Index+1}/10`;
+  document.getElementById("stage-pill").textContent=`${p1Index+1} / 10`;
+  document.getElementById("hint-text").textContent="🦁 ¡Salta al nombre en inglés!";
+  document.getElementById("instr-text").textContent="¿Cómo se llama este animal en inglés?";
+  setHTML("build-words",`<span class="placeholder-txt">Salta a la respuesta correcta…</span>`);
+  updateLivesDisplay();
+  renderPads(shuffle([...item.options]),padColorsPt1,onPadClickPart1);
+  placeMascotAtStart();
+}
+
+function loadPart2(){
+  if(p2Index>=part2Data.length){endGame();return;}
+  const item=part2Data[p2Index];
+  answeredWords=[];
+  targetAnswer=[...item.words];
+  document.getElementById("part-badge-el").textContent="🐘 PARTE 2 — CAN / CANNOT";
+  document.getElementById("part-badge-el").className="pbadge pbadge-2";
+  document.getElementById("spanish-text").innerHTML=`<span style="font-size:1.2em">${item.spanish}</span>`;
+  document.getElementById("prog-display").textContent=`Parte 2 · ${p2Index+1}/10`;
+  document.getElementById("stage-pill").textContent=`${p2Index+1} / 10`;
+  document.getElementById("hint-text").textContent="🐆 ¡Construye la oración palabra por palabra!";
+  document.getElementById("instr-text").textContent="Put the words in order — word by word!";
+  setHTML("build-words",`<span class="placeholder-txt">Salta a la primera palabra…</span>`);
+  updateLivesDisplay();
+  renderLilyPadsPart2(item);
+  placeMascotAtStart();
+}
+
+function renderLilyPadsPart2(item){
+  const world=document.getElementById("game-world");
+  const ww=world.clientWidth||window.innerWidth,wh=world.clientHeight||300;
+  const correct=[...item.words];
+  const used=new Set(correct);
+  const dists=[];let tries=0;
+  while(dists.length<3&&tries<80){
+    const w=distractorsPart2[Math.floor(Math.random()*distractorsPart2.length)];
+    if(!used.has(w)){dists.push(w);used.add(w);}
+    tries++;
+  }
+  const all=shuffle([...correct,...dists]);
+  renderPads(all,padColorsPt2,onPadClickPart2);
+}
+
+/* ====================================================
+   RENDER PADS
+==================================================== */
+function renderPads(words,colorArr,clickHandler){
+  const container=document.getElementById("lily-pads-container");container.innerHTML="";
+  const world=document.getElementById("game-world");
+  const ww=world.clientWidth||window.innerWidth,wh=world.clientHeight||300;
+  const count=words.length;
+  const padW=Math.min(Math.max(ww/(count+0.9),55),110);
+  const padH=padW*0.55;
+  const rowW=count*(padW+10);
+  const sx=Math.max(6,(ww-rowW)/2);
+
+  words.forEach((word,i)=>{
+    const x=sx+i*(padW+10)+(Math.random()-0.5)*10;
+    const y=wh*(0.1+Math.random()*0.55);
+    const [c1,c2]=colorArr[i%colorArr.length];
+    const pad=document.createElement("div");
+    pad.className="lily-pad";
+    pad.style.cssText=`left:${x}px;top:${y}px;width:${padW}px;height:${padH}px;animation:stoneBob ${2.2+Math.random()*2}s ease-in-out ${Math.random()*1.8}s infinite;`;
+    pad.dataset.word=word;
+
+    // Rock/stone shape with warm savanna tones
+    pad.innerHTML=`<svg viewBox="0 0 100 56" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:100%">
+      <defs>
+        <radialGradient id="sg${i}" cx="30%" cy="22%" r="75%">
+          <stop offset="0%" stop-color="${c2}"/>
+          <stop offset="100%" stop-color="${c1}"/>
+        </radialGradient>
+      </defs>
+      <ellipse cx="50" cy="30" rx="46" ry="24" fill="url(#sg${i})"/>
+      <ellipse cx="50" cy="30" rx="46" ry="24" fill="none" stroke="rgba(255,200,80,0.2)" stroke-width="1.5"/>
+      <ellipse cx="28" cy="20" rx="9" ry="4.5" fill="rgba(255,255,255,0.1)"/>
+      <ellipse cx="64" cy="24" rx="7" ry="3" fill="rgba(255,255,255,0.07)"/>
+      <ellipse cx="46" cy="14" rx="14" ry="3.5" fill="rgba(255,255,255,0.08)"/>
+    </svg>
+    <div class="pad-word">${word}</div>`;
+
+    pad.addEventListener("click",()=>clickHandler(pad,word));
+    container.appendChild(pad);
+  });
+}
+
+function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+
+/* ====================================================
+   MASCOT (LION)
+==================================================== */
+function placeMascotAtStart(){
+  const world=document.getElementById("game-world");
+  const ww=world.clientWidth||window.innerWidth,wh=world.clientHeight||300;
+  const el=document.getElementById("mascot");
+  const sz=Math.min(Math.max(ww*0.11,50),88);
+  el.style.width=sz+"px";el.style.height=sz+"px";
+  mascotPos={x:ww/2-sz/2,y:wh*0.82};
+  el.style.left=mascotPos.x+"px";el.style.top=mascotPos.y+"px";
+  el.style.opacity="1";el.style.transform="";
+}
+
+function jumpTo(padEl,cb){
+  const world=document.getElementById("game-world"),el=document.getElementById("mascot");
+  const sz=parseInt(el.style.width)||74;
+  const pr=padEl.getBoundingClientRect(),wr=world.getBoundingClientRect();
+  const tx=pr.left-wr.left+pr.width/2-sz/2,ty=pr.top-wr.top+pr.height/2-sz*0.6;
+  const sx=mascotPos.x,sy=mascotPos.y,dur=430,t0=performance.now();
+  playJump();
+  function step(now){
+    const t=Math.min((now-t0)/dur,1),e=t<0.5?2*t*t:-1+(4-2*t)*t,arc=Math.sin(Math.PI*t)*72;
+    el.style.left=(sx+(tx-sx)*e)+"px";el.style.top=(sy+(ty-sy)*e-arc)+"px";
+    el.style.transform=`scaleX(${1-Math.sin(Math.PI*t)*0.12}) scaleY(${1+Math.sin(Math.PI*t)*0.12})`;
+    if(t<1)requestAnimationFrame(step);
+    else{mascotPos={x:tx,y:ty};el.style.left=tx+"px";el.style.top=ty+"px";el.style.transform="scaleX(1.14) scaleY(0.88)";setTimeout(()=>{el.style.transform="";if(cb)cb();},130);}
+  }
+  requestAnimationFrame(step);
+}
+
+function mascotFall(){
+  const el=document.getElementById("mascot"),world=document.getElementById("game-world");
+  playFall();
+  el.style.transition="top 1.3s ease-in,opacity 1.3s,transform 1.3s";
+  el.style.top=(world.clientHeight+90)+"px";el.style.opacity="0";el.style.transform="rotate(180deg) scale(0.3)";
+  const sp=document.createElement("div");sp.className="splash";
+  sp.innerHTML=`<svg viewBox="0 0 90 90" width="90" height="90"><circle cx="45" cy="45" r="38" fill="none" stroke="rgba(255,160,40,0.8)" stroke-width="5"/><text x="45" y="56" text-anchor="middle" font-size="28">💨</text></svg>`;
+  sp.style.cssText=`left:${mascotPos.x-5}px;top:${mascotPos.y-5}px;`;
+  world.appendChild(sp);
+  setTimeout(()=>{sp.remove();gameActive=false;showFeedback("🦁 ¡Caída!","El león cayó. ¡Volvemos al principio!","#e63900",()=>resetToBeginning());},1400);
+}
+
+/* ====================================================
+   PAD CLICK — PART 1
+==================================================== */
+function onPadClickPart1(padEl,word){
+  if(!gameActive||isAnimating)return;
+  const item=part1Data[p1Index];
+  if(word===item.correct){
+    isAnimating=true;
+    jumpTo(padEl,()=>{
+      playCorrect();padEl.classList.add("correct");
+      const c=document.getElementById("build-words");c.innerHTML="";
+      const s=document.createElement("span");s.className="built-word";s.textContent=word;s.style.background=padColorsPt1[p1Index%padColorsPt1.length][1];c.appendChild(s);
+      setTimeout(()=>{
+        const isLast=p1Index>=part1Data.length-1;
+        showFeedback("✅ ¡Correcto!",`${item.spanish.trim().replace(/^\S+\s*/,"")} = ${item.correct} ✔`,"#2ab010",()=>{
+          p1Index++;isAnimating=false;
+          if(p1Index>=part1Data.length){gameActive=false;document.getElementById("part-transition").classList.add("show");}
+          else loadCurrent();
+        });
+        if(!isLast)spawnParticles();
+        isAnimating=false;
+      },340);
+    });
+  } else {
+    playWrong();padEl.classList.add("wrong");mistakes++;lives--;
+    updateLivesDisplay();
+    setTimeout(()=>padEl.classList.remove("wrong"),620);
+    if(lives<=0){isAnimating=true;mascotFall();}
+    else showFeedback("❌ ¡Incorrecto!","Intenta otra piedra…","#e83010",null);
+  }
+}
+
+/* ====================================================
+   PAD CLICK — PART 2
+==================================================== */
+function onPadClickPart2(padEl,word){
+  if(!gameActive||isAnimating)return;
+  const expected=targetAnswer[answeredWords.length];
+  if(word===expected){
+    isAnimating=true;
+    jumpTo(padEl,()=>{
+      playCorrect();padEl.classList.add("correct");
+      answeredWords.push(word);
+      updateBuildPart2();
+      if(answeredWords.length===targetAnswer.length){
+        const fullSentence=targetAnswer.join(" ");
+        setTimeout(()=>{
+          const isLast=p2Index>=part2Data.length-1;
+          showFeedback("🐾 ¡Perfecto!",`"${fullSentence}"`,"#1a9020",()=>{
+            p2Index++;answeredWords=[];isAnimating=false;
+            if(p2Index>=part2Data.length)endGame();else loadCurrent();
+          });
+          if(!isLast)spawnParticles();
+          isAnimating=false;
+        },340);
+      } else {isAnimating=false;}
+    });
+  } else {
+    playWrong();padEl.classList.add("wrong");mistakes++;lives--;
+    updateLivesDisplay();
+    setTimeout(()=>padEl.classList.remove("wrong"),620);
+    if(lives<=0){isAnimating=true;mascotFall();}
+    else showFeedback("❌ ¡Incorrecto!","Intenta otra palabra…","#e83010",null);
+  }
+}
+
+function updateBuildPart2(){
+  const total=targetAnswer.length;
+  const c=document.getElementById("build-words");c.innerHTML="";
+  answeredWords.forEach((w,i)=>{
+    const s=document.createElement("span");s.className="built-word";
+    s.style.background=padColorsPt2[i%padColorsPt2.length][1];s.textContent=w;c.appendChild(s);
+  });
+  for(let i=answeredWords.length;i<total;i++){
+    const sl=document.createElement("span");sl.className="word-slot";c.appendChild(sl);
+  }
+}
+
+/* ====================================================
+   PART TRANSITION
+==================================================== */
+function startPart2(){
+  document.getElementById("part-transition").classList.remove("show");
+  gamePart=2;p2Index=0;answeredWords=[];targetAnswer=[];lives=3;updateLivesDisplay();gameActive=true;
+  const el=document.getElementById("mascot");
+  el.style.transition="none";el.style.opacity="1";el.style.transform="";
+  void el.offsetHeight;el.style.transition="";
+  loadCurrent();
+}
+
+/* ====================================================
+   HELPERS
+==================================================== */
+function showFeedback(text,sub,color,cb){
+  const ov=document.getElementById("feedback-overlay");
+  document.getElementById("feedback-text").textContent=text;
+  document.getElementById("feedback-text").style.color=color;
+  document.getElementById("feedback-sub").textContent=sub||"";
+  ov.className="feedback-overlay show";ov.style.background=color+"22";
+  const delay=cb?1850:1100;
+  setTimeout(()=>{ov.className="feedback-overlay";ov.style.background="";if(cb)cb();},delay);
+}
+function setHTML(id,h){document.getElementById(id).innerHTML=h;}
+function updateLivesDisplay(){let d="";for(let i=0;i<3;i++)d+=(i<lives?"❤️":"💔");document.getElementById("lives-display").textContent=d;}
+function colorText(text){return text.split("").map((c,i)=>c===" "?" ":`<span style="color:${lc[i%lc.length]};font-family:'Fredoka One',cursive">${c}</span>`).join("");}
+function spawnParticles(){
+  const cs=["#f5c842","#ff9922","#44ddaa","#ff5588","#60d8ff","#ff8855","#aaff44","#ffdd44"];
+  for(let i=0;i<32;i++){
+    const p=document.createElement("div");p.className="particle";
+    const sz=7+Math.random()*14;
+    p.style.cssText=`width:${sz}px;height:${sz}px;background:${cs[Math.floor(Math.random()*cs.length)]};left:${5+Math.random()*90}%;top:${Math.random()*10}%;animation:partFall ${1.5+Math.random()*2.2}s linear ${Math.random()*0.5}s forwards;border-radius:${Math.random()>0.5?"50%":"4px"};`;
+    document.body.appendChild(p);setTimeout(()=>p.remove(),4000);
+  }
+}
+function resetToBeginning(){
+  gamePart=1;p1Index=0;p2Index=0;answeredWords=[];targetAnswer=[];lives=3;mistakes=0;isAnimating=false;gameActive=true;
+  const el=document.getElementById("mascot");
+  el.style.transition="none";el.style.opacity="1";el.style.transform="";
+  void el.offsetHeight;el.style.transition="";
+  updateLivesDisplay();loadCurrent();
+}
+
+/* ====================================================
+   END GAME
+==================================================== */
+function endGame(){
+  gameActive=false;
+  document.getElementById("game-screen").classList.remove("active");
+  document.getElementById("results-screen").classList.add("active");
+
+  const se=document.getElementById("result-stars");se.innerHTML="";
+  for(let i=0;i<60;i++){
+    const s=document.createElement("div");s.className="star";const sz=1+Math.random()*3;
+    s.style.cssText=`left:${Math.random()*100}%;top:${Math.random()*100}%;width:${sz}px;height:${sz}px;animation-delay:${Math.random()*2.5}s;`;
+    se.appendChild(s);
+  }
+
+  const grade=mistakes===0?10:Math.max(5,10-Math.floor(mistakes/2));
+  document.getElementById("result-name").textContent="Explorador: "+studentName;
+  document.getElementById("result-grade").textContent=grade;
+  document.getElementById("result-detail1").textContent="🦒 Parte 1: 10 animales · 🐘 Parte 2: 10 oraciones can/cannot";
+  document.getElementById("result-detail2").textContent=`❌ Errores: ${mistakes}`;
+  document.getElementById("result-msg").textContent=
+    grade===10?"🌟 ¡PERFECTO! ¡Eres un experto en animales salvajes! 🌟":
+    grade>=9?"⭐ ¡Excelente! ¡Casi perfecto! 🦁":
+    grade>=8?"👍 ¡Muy bien! ¡Sigue aprendiendo! 🦒":
+    grade>=7?"📚 ¡Buen intento! Practica más para mejorar.":
+    "🔄 ¡No te rindas! Inténtalo de nuevo, ¡puedes hacerlo mejor!";
+
+  const tr=document.getElementById("transcript");
+  tr.innerHTML=`<div class="tr-section">🦒 Parte 1 — Español → English</div>`;
+  part1Data.forEach(item=>{
+    const d=document.createElement("div");d.className="tr-row";
+    d.innerHTML=`<div class="tr-q">${item.spanish}</div>
+    <div class="tr-a">✅ <b style="color:#f5c842">${item.correct}</b></div>`;
+    tr.appendChild(d);
+  });
+  const sec2=document.createElement("div");sec2.className="tr-section";sec2.style.marginTop="10px";sec2.textContent="🐘 Parte 2 — Can / Cannot";tr.appendChild(sec2);
+  part2Data.forEach(item=>{
+    const d=document.createElement("div");d.className="tr-row";
+    d.innerHTML=`<div class="tr-q">${item.spanish}</div>
+    <div class="tr-a">✅ <b style="color:#44ddaa">${item.words.join(" ")}</b></div>`;
+    tr.appendChild(d);
+  });
+  spawnParticles();
+}
+
+function resetGame(){
+  document.getElementById("results-screen").classList.remove("active");
+  document.getElementById("welcome-screen").classList.add("active");
+  initWelcome();
+}
+
+/* ====================================================
+   INIT
+==================================================== */
+document.addEventListener("DOMContentLoaded",()=>{
+  resizeCanvas();initSavanna();savannaLoop();initWelcome();
+  document.getElementById("student-name").addEventListener("keypress",e=>{if(e.key==="Enter")startGame();});
+  window.addEventListener("resize",()=>{
+    resizeCanvas();initSavanna();
+    if(gameActive){
+      if(gamePart===1)renderPads(shuffle([...part1Data[p1Index].options]),padColorsPt1,onPadClickPart1);
+      else renderLilyPadsPart2(part2Data[p2Index]);
+      placeMascotAtStart();
+    }
+  });
+});
+</script>
+</body>
+</html>
